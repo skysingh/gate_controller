@@ -420,12 +420,12 @@ def run_ui():
 
     pygame.init()
 
-    # Display setup
+    # Display setup - use SCALED for proper fullscreen on HDMI displays
     if FULLSCREEN:
-        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN | pygame.SCALED)
         pygame.mouse.set_visible(False)
     else:
-        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SCALED)
 
     pygame.display.set_caption("Gate Control")
     clock = pygame.time.Clock()
@@ -450,19 +450,19 @@ def run_ui():
     LOG_BG = (26, 24, 20)
     COUNTDOWN_BG = (50, 45, 30)
 
-    # Fonts
+    # Fonts (for 480x320)
     try:
-        font_lg = pygame.font.SysFont('dejavusans', 18, bold=True)
-        font_md = pygame.font.SysFont('dejavusans', 14)
-        font_sm = pygame.font.SysFont('dejavusans', 11)
+        font_lg = pygame.font.SysFont('dejavusans', 20, bold=True)
+        font_md = pygame.font.SysFont('dejavusans', 16)
+        font_sm = pygame.font.SysFont('dejavusans', 12)
         font_xs = pygame.font.SysFont('dejavusans', 10)
-        font_title = pygame.font.SysFont('dejavusans', 22, bold=True)
+        font_title = pygame.font.SysFont('dejavusans', 20, bold=True)
     except:
-        font_lg = pygame.font.Font(None, 24)
-        font_md = pygame.font.Font(None, 18)
-        font_sm = pygame.font.Font(None, 15)
-        font_xs = pygame.font.Font(None, 13)
-        font_title = pygame.font.Font(None, 28)
+        font_lg = pygame.font.Font(None, 26)
+        font_md = pygame.font.Font(None, 20)
+        font_sm = pygame.font.Font(None, 16)
+        font_xs = pygame.font.Font(None, 14)
+        font_title = pygame.font.Font(None, 26)
 
     # Button class
     class TouchButton:
@@ -502,19 +502,20 @@ def run_ui():
                 return True
             return False
 
-    # Layout — 480x320 (landscape 3.5")
-    # Top bar: 40px
-    # Buttons: 4 across, ~100px tall
-    # Status: 40px
+    # Layout — 480x320 (Osoyoo 3.5" HDMI v3.0)
+    # Top bar: 32px
+    # Buttons: 2x2 grid for larger touch targets
+    # Status: 28px
     # Log: remaining
 
-    PAD = 8
-    TOP_H = 38
+    PAD = 6
+    TOP_H = 32
     BTN_Y = TOP_H + PAD
-    BTN_H = 80
-    BTN_W = (SCREEN_WIDTH - PAD * 5) // 4
-    STATUS_Y = BTN_Y + BTN_H + PAD
-    STATUS_H = 36
+    BTN_H = 95
+    BTN_W = (SCREEN_WIDTH - PAD * 3) // 2
+    BTN_Y2 = BTN_Y + BTN_H + PAD
+    STATUS_Y = BTN_Y2 + BTN_H + PAD
+    STATUS_H = 28
     LOG_Y = STATUS_Y + STATUS_H + PAD
     LOG_H = SCREEN_HEIGHT - LOG_Y - PAD
 
@@ -523,10 +524,10 @@ def run_ui():
                     "OPEN", GREEN, GREEN_HOVER, cmd_open),
         TouchButton(PAD * 2 + BTN_W, BTN_Y, BTN_W, BTN_H,
                     "CLOSE", RED, RED_HOVER, cmd_close),
-        TouchButton(PAD * 3 + BTN_W * 2, BTN_Y, BTN_W, BTN_H,
+        TouchButton(PAD, BTN_Y2, BTN_W, BTN_H,
                     "STATUS", BLUE, BLUE_HOVER, cmd_status),
-        TouchButton(PAD * 4 + BTN_W * 3, BTN_Y, BTN_W, BTN_H,
-                    "MOMENT", AMBER, AMBER_HOVER, cmd_momentary),
+        TouchButton(PAD * 2 + BTN_W, BTN_Y2, BTN_W, BTN_H,
+                    "MOMENTARY", AMBER, AMBER_HOVER, cmd_momentary),
     ]
 
     running = True
@@ -554,7 +555,7 @@ def run_ui():
         # Update log cache every 2 seconds
         now = time.time()
         if now - last_log_update > 2:
-            cached_log = get_log_lines(6)
+            cached_log = get_log_lines(3)
             last_log_update = now
 
         # ---- DRAW ----
@@ -571,15 +572,15 @@ def run_ui():
         # Modem indicator
         modem_col = MODEM_ON if modem_ready else MODEM_OFF
         modem_label = "MODEM OK" if modem_ready else "MODEM OFF"
-        pygame.draw.circle(screen, modem_col, (SCREEN_WIDTH - 70, TOP_H // 2), 5)
+        pygame.draw.circle(screen, modem_col, (SCREEN_WIDTH - 60, TOP_H // 2), 5)
         mt = font_xs.render(modem_label, True, modem_col)
-        screen.blit(mt, (SCREEN_WIDTH - 60, (TOP_H - mt.get_height()) // 2))
+        screen.blit(mt, (SCREEN_WIDTH - 52, (TOP_H - mt.get_height()) // 2))
 
         # Time display
         local_now = datetime.utcnow() + timedelta(hours=TIMEZONE_OFFSET)
         time_str = local_now.strftime('%I:%M %p')
         time_txt = font_sm.render(time_str, True, TEXT_DIM)
-        screen.blit(time_txt, (SCREEN_WIDTH - 160, (TOP_H - time_txt.get_height()) // 2))
+        screen.blit(time_txt, (SCREEN_WIDTH - 130, (TOP_H - time_txt.get_height()) // 2))
 
         # Buttons
         for btn in buttons:
@@ -597,12 +598,12 @@ def run_ui():
             pygame.draw.rect(screen, COUNTDOWN_BG, (PAD + 1, STATUS_Y + 1, SCREEN_WIDTH - PAD * 2 - 2, STATUS_H - 2), border_radius=5)
 
         st = font_md.render(status_str, True, TEXT_BRIGHT if not momentary_active else AMBER)
-        screen.blit(st, (PAD + 10, STATUS_Y + (STATUS_H - st.get_height()) // 2))
+        screen.blit(st, (PAD + 8, STATUS_Y + (STATUS_H - st.get_height()) // 2))
 
         # Auto-close info on right side of status bar
         ac_str = f"Auto-close: {auto_close_hour}:{auto_close_minute:02d}"
         ac_txt = font_xs.render(ac_str, True, TEXT_DIM)
-        screen.blit(ac_txt, (SCREEN_WIDTH - PAD - 10 - ac_txt.get_width(), STATUS_Y + (STATUS_H - ac_txt.get_height()) // 2))
+        screen.blit(ac_txt, (SCREEN_WIDTH - PAD - 8 - ac_txt.get_width(), STATUS_Y + (STATUS_H - ac_txt.get_height()) // 2))
 
         # Log area
         pygame.draw.rect(screen, LOG_BG, (PAD, LOG_Y, SCREEN_WIDTH - PAD * 2, LOG_H), border_radius=6)
@@ -610,15 +611,15 @@ def run_ui():
 
         # Log header
         lh = font_xs.render("RECENT ACTIVITY", True, TEXT_DIM)
-        screen.blit(lh, (PAD + 8, LOG_Y + 4))
+        screen.blit(lh, (PAD + 6, LOG_Y + 4))
 
         # Log entries
-        ly = LOG_Y + 18
+        ly = LOG_Y + 16
         for i, line in enumerate(cached_log):
-            if ly + 14 > LOG_Y + LOG_H - 4:
+            if ly + 12 > LOG_Y + LOG_H - 4:
                 break
             # Truncate long lines
-            display_line = line if len(line) < 65 else line[:62] + "..."
+            display_line = line if len(line) < 60 else line[:57] + "..."
             # Color code
             col = TEXT_DIM
             if "OPEN" in line:
@@ -633,8 +634,8 @@ def run_ui():
                 col = (180, 80, 70)
 
             lt = font_xs.render(display_line, True, col)
-            screen.blit(lt, (PAD + 8, ly))
-            ly += 15
+            screen.blit(lt, (PAD + 6, ly))
+            ly += 14
 
         pygame.display.flip()
         clock.tick(10)  # 10 FPS for Pi Zero W single-core
