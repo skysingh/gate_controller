@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Gate Control
+Exec=/usr/bin/python3 /home/vsingh/gate_control_touch.py
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true

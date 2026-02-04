@@ -1,0 +1,4 @@
+blynklib==0.2.6
+pyserial==3.5
+python-dotenv==1.0.0
+pygame==2.5.2

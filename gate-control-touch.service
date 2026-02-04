@@ -1,0 +1,19 @@
+[Unit]
+Description=Gate Control Touchscreen + Blynk
+After=network-online.target graphical.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=vsingh
+Environment=DISPLAY=:0
+Environment=SDL_FBDEV=/dev/fb0
+WorkingDirectory=/home/vsingh/gate-control-touch
+ExecStart=/home/vsingh/gate-control-touch/venv/bin/python3 gate_control_touch.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=graphical.target
